@@ -21,22 +21,23 @@ Replace the default options with our enhanced workflow:
 - ❌ In Progress → Keep (rename to 🚧 In Progress)  
 - ❌ Done → Delete
 
-#### **Add These New Options:**
-1. **💡 Ideas** 
+#### **Add These New Options (in priority order):**
+1. **👀 Needs Review** 
+   - Color: Red (#e74c3c)
+   - Description: Items requiring personal attention/decision-making
+   - Position: Far left for maximum visibility
+
+2. **💡 Ideas** 
    - Color: Purple (#9b59b6)
    - Description: Creative brainstorming and concepts
 
-2. **📋 Backlog**
+3. **📋 Backlog**
    - Color: Gray (#95a5a6)  
    - Description: Well-defined items ready to work on
 
-3. **🚧 In Progress** (rename existing)
+4. **🚧 In Progress** (rename existing)
    - Color: Orange (#f39c12)
    - Description: Currently being worked on
-
-4. **👀 Review**
-   - Color: Yellow (#f1c40f)
-   - Description: Code complete, needs validation
 
 5. **✅ Done This Week**
    - Color: Green (#27ae60)
@@ -116,13 +117,34 @@ jobs:
 
 ## 🎯 Expected Result
 
-After setup, your board will have a streamlined professional workflow:
+After setup, your board will have a priority-driven professional workflow:
 
 ```
-💡 Ideas → 📋 Backlog → 🚧 In Progress → 👀 Review → ✅ Done This Week → 📦 Archive
+👀 Needs Review → 💡 Ideas → 📋 Backlog → 🚧 In Progress → ✅ Done This Week → 📦 Archive
 ```
 
-This creates a clear pipeline from creative ideation to completed work, with proper staging areas for different types of tasks.
+## 🎯 **Key Workflow Concepts:**
+
+### **👀 Needs Review - Priority Inbox**
+The far-left position creates a **priority queue** for items requiring personal attention:
+
+**Use Cases:**
+- **Ideas → Backlog**: Evaluate if creative ideas are worth developing
+- **Completed Work**: Validate that "done" work meets quality standards
+- **Personal Tasks**: Items only you can handle (user research, stakeholder communication)
+- **Blocked Items**: Work waiting on your decision or input
+- **Quality Gates**: Anything requiring judgment before proceeding
+
+**Workflow Principle**: Address "Needs Review" items **first** before other work - they're often blockers for team productivity.
+
+### **Typical Item Journey:**
+1. **New Idea** → 💡 Ideas
+2. **Idea Evaluation** → 👀 Needs Review → 📋 Backlog (if approved)
+3. **Development** → 🚧 In Progress  
+4. **Quality Check** → 👀 Needs Review → ✅ Done This Week (if approved)
+5. **Archive** → 📦 Archive (after 6+ weeks)
+
+This creates a clear pipeline with appropriate **human judgment points** throughout the development process.
 
 ## ⚠️ Important Notes
 

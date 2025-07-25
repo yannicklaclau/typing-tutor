@@ -112,10 +112,10 @@ gh project list --owner YOUR_USERNAME
 
 **Note**: GitHub Projects v2 starts with basic columns. You'll customize these through the web interface:
 
-1. **💡 Ideas** - Creative brainstorming, "what if" discussions
-2. **📋 Backlog** - Well-defined items ready to work on
-3. **🚧 In Progress** - Currently being worked on
-4. **👀 Review** - Code complete, needs validation
+1. **👀 Needs Review** - Priority inbox for items requiring personal attention
+2. **💡 Ideas** - Creative brainstorming, "what if" discussions
+3. **📋 Backlog** - Well-defined items ready to work on
+4. **🚧 In Progress** - Currently being worked on
 5. **✅ Done This Week** - Completed this week
 6. **📦 Archive** - Items >6 weeks old
 
