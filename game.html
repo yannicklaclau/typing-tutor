@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 Typing Defender</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: white;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        canvas {
+            border: 2px solid #444;
+            border-radius: 8px;
+            background: linear-gradient(180deg, #87CEEB 0%, #98FB98 100%);
+        }
+        
+        .instructions {
+            text-align: center;
+            color: #ccc;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎯 Typing Defender</h1>
+    <canvas id="gameCanvas" width="1200" height="800"></canvas>
+    <div class="instructions">
+        Type the falling words to defend your cities! • Press R to restart when game over
+    </div>
+
+    <script>
+        // Game constants
+        const CANVAS_WIDTH = 1200;
+        const CANVAS_HEIGHT = 800;
+        const GROUND_HEIGHT = 120;
+        const CITY_COUNT = 6;
+        const CITY_NAMES = ['Home', 'School', 'Park', 'Store', 'Library', 'Beach'];
+
+        // Level configurations
+        const LEVEL_CONFIGS = [
+            {
+                level: 1,
+                allowedKeys: ['a', 's', 'd', 'f'],
+                wordPool: ['as', 'ad', 'sad', 'fad', 'add', 'sass'],
+                wordSpeed: 1.0,
+                spawnRate: 3000,
+                wordsToComplete: 8,
+                description: 'Learn the left home row: A, S, D, F'
+            },
+            {
+                level: 2,
+                allowedKeys: ['a', 's', 'd', 'f'],
+                wordPool: ['fast', 'dad', 'adds', 'fade', 'sass', 'fads'],
+                wordSpeed: 1.2,
+                spawnRate: 2800,
+                wordsToComplete: 10,
+                description: 'Master left home row with longer words'
+            },
+            {
+                level: 3,
+                allowedKeys: ['j', 'k', 'l', ';'],
+                wordPool: ['jk', 'kl', 'lll', 'jjj', 'kjl'],
+                wordSpeed: 1.0,
+                spawnRate: 3000,
+                wordsToComplete: 8,
+                description: 'Learn the right home row: J, K, L, ;'
+            },
+            {
+                level: 4,
+                allowedKeys: ['a', 's', 'd', 'f', 'j', 'k', 'l', ';'],
+                wordPool: ['ask', 'fall', 'all', 'lads', 'flask', 'skull', 'jail'],
+                wordSpeed: 1.3,
+                spawnRate: 2500,
+                wordsToComplete: 12,
+                description: 'Combine both sides of home row'
+            },
+            {
+                level: 5,
+                allowedKeys: ['q', 'w', 'e', 'r', 't', 'a', 's', 'd', 'f'],
+                wordPool: ['west', 'rest', 'fest', 'test', 'waste', 'water', 'sweat'],
+                wordSpeed: 1.4,
+                spawnRate: 2300,
+                wordsToComplete: 15,
+                description: 'Add top row letters: Q, W, E, R, T'
+            }
+        ];
+
+        // Game state
+        let gameState = {
+            score: 0,
+            level: 1,
+            lives: 3,
+            isPlaying: true,
+            isPaused: false,
+            gameOver: false,
+            activeWords: [],
+            cities: [],
+            missiles: [],
+            particles: [],
+            accuracy: 100,
+            totalTyped: 0,
+            correctlyTyped: 0
+        };
+
+        let lastWordSpawn = 0;
+        let canvas, ctx;
+
+        // Initialize cities
+        function createInitialCities() {
+            const cities = [];
+            const cityWidth = 120;
+            const citySpacing = (CANVAS_WIDTH - (CITY_COUNT * cityWidth)) / (CITY_COUNT + 1);
+            
+            for (let i = 0; i < CITY_COUNT; i++) {
+                cities.push({
+                    id: `city-${i}`,
+                    name: CITY_NAMES[i],
+                    x: citySpacing + i * (cityWidth + citySpacing),
+                    y: CANVAS_HEIGHT - GROUND_HEIGHT,
+                    width: cityWidth,
+                    height: 80,
+                    health: 3,
+                    maxHealth: 3,
+                    isDestroyed: false
+                });
+            }
+            
+            return cities;
+        }
+
+        function resetGame() {
+            gameState = {
+                score: 0,
+                level: 1,
+                lives: 3,
+                isPlaying: true,
+                isPaused: false,
+                gameOver: false,
+                activeWords: [],
+                cities: createInitialCities(),
+                missiles: [],
+                particles: [],
+                accuracy: 100,
+                totalTyped: 0,
+                correctlyTyped: 0
+            };
+            lastWordSpawn = 0;
+        }
+
+        function getCurrentLevelConfig() {
+            return LEVEL_CONFIGS[Math.min(gameState.level - 1, LEVEL_CONFIGS.length - 1)] || LEVEL_CONFIGS[0];
+        }
+
+        function generateWord() {
+            const levelConfig = getCurrentLevelConfig();
+            const word = levelConfig.wordPool[Math.floor(Math.random() * levelConfig.wordPool.length)];
+            const targetCityIndex = Math.floor(Math.random() * CITY_COUNT);
+            
+            return {
+                id: `word-${Date.now()}-${Math.random()}`,
+                word,
+                x: Math.random() * (CANVAS_WIDTH - 100),
+                y: -50,
+                speed: levelConfig.wordSpeed,
+                targetCityIndex,
+                currentLetterIndex: 0,
+                isActive: true
+            };
+        }
+
+        function handleKeyPress(event) {
+            if (!gameState.isPlaying || gameState.isPaused) return;
+            
+            const key = event.key.toLowerCase();
+            const levelConfig = getCurrentLevelConfig();
+            
+            if (!levelConfig.allowedKeys.includes(key)) return;
+            
+            // Find the first active word that matches the next expected letter
+            const activeWord = gameState.activeWords.find(word => 
+                word.isActive && 
+                word.word[word.currentLetterIndex] === key
+            );
+            
+            if (activeWord) {
+                // Correct letter typed
+                activeWord.currentLetterIndex++;
+                gameState.correctlyTyped++;
+                
+                // Word completed
+                if (activeWord.currentLetterIndex >= activeWord.word.length) {
+                    activeWord.isActive = false;
+                    gameState.score += activeWord.word.length * 10;
+                    
+                    // Create missile
+                    const missile = {
+                        id: `missile-${Date.now()}`,
+                        startX: CANVAS_WIDTH / 2,
+                        startY: CANVAS_HEIGHT - GROUND_HEIGHT,
+                        targetX: activeWord.x,
+                        targetY: activeWord.y,
+                        currentX: CANVAS_WIDTH / 2,
+                        currentY: CANVAS_HEIGHT - GROUND_HEIGHT,
+                        progress: 0,
+                        isActive: true
+                    };
+                    gameState.missiles.push(missile);
+                }
+            }
+            
+            gameState.totalTyped++;
+            gameState.accuracy = (gameState.correctlyTyped / gameState.totalTyped) * 100;
+        }
+
+        function updateGame(deltaTime) {
+            const currentTime = Date.now();
+            const levelConfig = getCurrentLevelConfig();
+            
+            // Spawn new words
+            if (currentTime - lastWordSpawn > levelConfig.spawnRate) {
+                gameState.activeWords.push(generateWord());
+                lastWordSpawn = currentTime;
+            }
+            
+            // Update word positions
+            gameState.activeWords.forEach(word => {
+                if (word.isActive) {
+                    word.y += word.speed * (deltaTime / 16);
+                    
+                    // Check if word hit ground
+                    if (word.y > CANVAS_HEIGHT - GROUND_HEIGHT - 50) {
+                        // Damage city
+                        const targetCity = gameState.cities[word.targetCityIndex];
+                        if (targetCity && !targetCity.isDestroyed) {
+                            targetCity.health--;
+                            if (targetCity.health <= 0) {
+                                targetCity.isDestroyed = true;
+                                gameState.lives--;
+                            }
+                        }
+                        word.isActive = false;
+                    }
+                }
+            });
+            
+            // Update missiles
+            gameState.missiles.forEach(missile => {
+                if (missile.isActive) {
+                    missile.progress += deltaTime / 500;
+                    
+                    if (missile.progress >= 1) {
+                        missile.progress = 1;
+                        missile.isActive = false;
+                        
+                        // Create explosion particles
+                        for (let i = 0; i < 20; i++) {
+                            const particle = {
+                                id: `particle-${Date.now()}-${i}`,
+                                x: missile.targetX,
+                                y: missile.targetY,
+                                vx: (Math.random() - 0.5) * 100,
+                                vy: (Math.random() - 0.5) * 100,
+                                life: 60,
+                                maxLife: 60,
+                                color: `hsl(${Math.random() * 60 + 15}, 100%, 50%)`,
+                                size: Math.random() * 4 + 2
+                            };
+                            gameState.particles.push(particle);
+                        }
+                    } else {
+                        // Interpolate missile position
+                        const t = missile.progress;
+                        missile.currentX = missile.startX + (missile.targetX - missile.startX) * t;
+                        missile.currentY = missile.startY + (missile.targetY - missile.startY) * t;
+                    }
+                }
+            });
+            
+            // Update particles
+            gameState.particles.forEach(particle => {
+                particle.x += particle.vx * (deltaTime / 1000);
+                particle.y += particle.vy * (deltaTime / 1000);
+                particle.life--;
+            });
+            
+            // Remove inactive elements
+            gameState.activeWords = gameState.activeWords.filter(word => word.isActive || word.y < CANVAS_HEIGHT);
+            gameState.missiles = gameState.missiles.filter(missile => missile.isActive);
+            gameState.particles = gameState.particles.filter(particle => particle.life > 0);
+            
+            // Check game over
+            const activeCities = gameState.cities.filter(city => !city.isDestroyed);
+            if (activeCities.length <= 2) {
+                gameState.gameOver = true;
+                gameState.isPlaying = false;
+            }
+        }
+
+        function render() {
+            // Clear canvas
+            ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            
+            // Draw background gradient
+            const gradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
+            gradient.addColorStop(0, '#87CEEB');
+            gradient.addColorStop(1, '#98FB98');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            
+            // Draw ground
+            ctx.fillStyle = '#228B22';
+            ctx.fillRect(0, CANVAS_HEIGHT - GROUND_HEIGHT, CANVAS_WIDTH, GROUND_HEIGHT);
+            
+            // Draw cities
+            gameState.cities.forEach(city => {
+                if (!city.isDestroyed) {
+                    // City building
+                    ctx.fillStyle = city.health === 3 ? '#4169E1' : city.health === 2 ? '#FF6347' : '#8B0000';
+                    ctx.fillRect(city.x, city.y - city.height, city.width, city.height);
+                    
+                    // City name
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.font = '14px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(city.name, city.x + city.width / 2, city.y - city.height - 5);
+                    
+                    // Health dots
+                    ctx.fillStyle = '#00FF00';
+                    for (let i = 0; i < city.health; i++) {
+                        ctx.beginPath();
+                        ctx.arc(city.x + 10 + i * 15, city.y - city.height + 10, 3, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+            });
+            
+            // Draw missile launcher
+            const launcherX = CANVAS_WIDTH / 2;
+            const launcherY = CANVAS_HEIGHT - GROUND_HEIGHT;
+            
+            ctx.fillStyle = '#FFD700';
+            ctx.fillRect(launcherX - 15, launcherY - 30, 30, 30);
+            ctx.fillStyle = '#FF4500';
+            ctx.fillRect(launcherX - 5, launcherY - 40, 10, 15);
+            
+            // Draw words
+            gameState.activeWords.forEach(word => {
+                if (word.isActive) {
+                    ctx.font = '20px monospace';
+                    const textWidth = ctx.measureText(word.word).width;
+                    
+                    // Word bubble background
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                    ctx.fillRect(word.x - 10, word.y - 25, textWidth + 20, 35);
+                    ctx.strokeStyle = '#333';
+                    ctx.strokeRect(word.x - 10, word.y - 25, textWidth + 20, 35);
+                    
+                    // Draw word with color coding
+                    let currentX = word.x;
+                    
+                    for (let i = 0; i < word.word.length; i++) {
+                        const letter = word.word[i];
+                        if (i < word.currentLetterIndex) {
+                            ctx.fillStyle = '#00FF00'; // Typed letters - green
+                        } else if (i === word.currentLetterIndex) {
+                            ctx.fillStyle = '#FFFF00'; // Current letter - yellow
+                        } else {
+                            ctx.fillStyle = '#333333'; // Untyped letters - dark
+                        }
+                        
+                        ctx.fillText(letter, currentX, word.y);
+                        currentX += ctx.measureText(letter).width;
+                    }
+                    
+                    // Trajectory line to target city
+                    const targetCity = gameState.cities[word.targetCityIndex];
+                    if (targetCity && !targetCity.isDestroyed) {
+                        ctx.strokeStyle = 'rgba(255, 0, 0, 0.3)';
+                        ctx.setLineDash([5, 5]);
+                        ctx.beginPath();
+                        ctx.moveTo(word.x + textWidth / 2, word.y + 10);
+                        ctx.lineTo(targetCity.x + targetCity.width / 2, targetCity.y - targetCity.height / 2);
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                    }
+                }
+            });
+            
+            // Draw missiles
+            gameState.missiles.forEach(missile => {
+                if (missile.isActive) {
+                    ctx.fillStyle = '#FF0000';
+                    ctx.beginPath();
+                    ctx.arc(missile.currentX, missile.currentY, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Missile trail
+                    ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(missile.startX, missile.startY);
+                    ctx.lineTo(missile.currentX, missile.currentY);
+                    ctx.stroke();
+                }
+            });
+            
+            // Draw particles
+            gameState.particles.forEach(particle => {
+                const alpha = particle.life / particle.maxLife;
+                ctx.fillStyle = particle.color.replace(')', `, ${alpha})`).replace('hsl', 'hsla');
+                ctx.beginPath();
+                ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            
+            // Draw UI
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = '24px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText(`Score: ${gameState.score}`, 20, 40);
+            ctx.fillText(`Level: ${gameState.level}`, 20, 70);
+            ctx.fillText(`Lives: ${gameState.lives}`, 20, 100);
+            ctx.fillText(`Accuracy: ${gameState.accuracy.toFixed(1)}%`, 20, 130);
+            
+            // Level description
+            const levelConfig = getCurrentLevelConfig();
+            ctx.font = '16px Arial';
+            ctx.fillText(levelConfig.description, 20, CANVAS_HEIGHT - 20);
+            
+            // Game over screen
+            if (gameState.gameOver) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+                
+                ctx.fillStyle = '#FFFFFF';
+                ctx.font = '48px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('GAME OVER', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 50);
+                
+                ctx.font = '24px Arial';
+                ctx.fillText(`Final Score: ${gameState.score}`, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
+                ctx.fillText(`Accuracy: ${gameState.accuracy.toFixed(1)}%`, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 30);
+                ctx.fillText('Press R to Restart', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 80);
+            }
+        }
+
+        let lastTime = 0;
+        function gameLoop(currentTime) {
+            const deltaTime = currentTime - lastTime;
+            lastTime = currentTime;
+            
+            if (gameState.isPlaying && !gameState.isPaused) {
+                updateGame(deltaTime);
+            }
+            
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Initialize game
+        function init() {
+            canvas = document.getElementById('gameCanvas');
+            ctx = canvas.getContext('2d');
+            
+            resetGame();
+            
+            // Event listeners
+            document.addEventListener('keydown', (event) => {
+                if (event.key.toLowerCase() === 'r' && gameState.gameOver) {
+                    resetGame();
+                } else {
+                    handleKeyPress(event);
+                }
+            });
+            
+            // Start game loop
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Start the game when page loads
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
