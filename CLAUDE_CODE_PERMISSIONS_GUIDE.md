@@ -317,7 +317,35 @@ Optimize for:
 
 ---
 
-## 📚 **Implementation Guide**
+## ⚡ **2-Minute Quick Setup for New Projects**
+
+### **🎯 Copy & Paste Method**
+1. **Create permissions directory**:
+   ```bash
+   mkdir -p .claude
+   ```
+
+2. **Copy our proven configuration**:
+   ```bash
+   # Copy this entire content into .claude/settings.local.json
+   ```
+
+3. **Use Universal Safe Template** (copy the JSON from Step 3 below)
+
+4. **Test immediately**:
+   ```bash
+   # These should work without prompts:
+   git status
+   ls -la  
+   npm install (if Node.js project)
+   ```
+
+**⏱️ Total Time**: ~2 minutes  
+**✅ Result**: Secure, productive Claude Code setup ready for development
+
+---
+
+## 📚 **Detailed Implementation Guide**
 
 ### **Step 1: Backup Current Settings**
 ```bash

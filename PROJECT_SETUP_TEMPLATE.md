@@ -37,6 +37,7 @@ This template provides a battle-tested project management system that transforms
 
 ### **Required Foundation (Must Do)**
 - [ ] Repository setup with GitHub CLI permissions
+- [ ] **Claude Code permissions configuration** (⚡ 2-minute setup)
 - [ ] Enhanced label system (15+ labels)  
 - [ ] Project board with 6 priority-driven columns
 - [ ] Professional issue templates (4 templates)
@@ -53,6 +54,49 @@ This template provides a battle-tested project management system that transforms
 
 # 🚀 **REQUIRED FOUNDATION**
 *Complete Phases 1-5 for essential project management workflow*
+
+---
+
+## ⚡ **2-Minute Claude Code Permissions Setup**
+
+**Essential first step for any new project using Claude Code:**
+
+### **Quick Setup Steps**
+```bash
+# 1. Create permissions directory
+mkdir -p .claude
+
+# 2. Create settings file with universal safe configuration
+cat > .claude/settings.local.json << 'EOF'
+{
+  "permissions": {
+    "allow": [
+      "Edit", "Write", "Read", "Glob", "Grep", "LS",
+      "Bash(ls:*)", "Bash(find:*)", "Bash(grep:*)", "Bash(cat:*)", 
+      "Bash(git status)", "Bash(git add:*)", "Bash(git commit:*)",
+      "Bash(git push:*)", "Bash(git pull)", "Bash(git diff:*)",
+      "Bash(npm install)", "Bash(npm run:*)", "Bash(npm test)",
+      "Bash(gh issue:*)", "Bash(gh project:*)", "Bash(gh label:*)"
+    ],
+    "deny": [
+      "Bash(curl:*)", "Bash(rm:*)", "Bash(sudo:*)", "Bash(eval:*)"
+    ]
+  },
+  "env": {
+    "DISABLE_TELEMETRY": "1"
+  },
+  "includeCoAuthoredBy": false
+}
+EOF
+
+# 3. Test configuration
+git status  # Should work without prompt
+ls -la      # Should work without prompt
+```
+
+**⏱️ Result**: Secure, productive Claude Code ready for development in ~2 minutes
+
+📚 **For detailed configuration**: See `CLAUDE_CODE_PERMISSIONS_GUIDE.md` in any project using this template
 
 ---
 
@@ -591,6 +635,7 @@ gh issue list --state open --json number,title,updatedAt \
 ## 🚀 Final Implementation Checklist
 
 ### **Required Foundation (Essential - ~2-3 hours)**
+- [ ] **⚡ Claude Code permissions setup** (2 minutes - copy/paste from guide above)
 - [ ] Create repository and enable GitHub CLI with project permissions
 - [ ] Set up comprehensive label system (15+ labels)
 - [ ] Create project board with 6 priority-driven columns  
