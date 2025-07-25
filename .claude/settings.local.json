@@ -1,9 +1,57 @@
 {
   "permissions": {
     "allow": [
-      "Bash(find:*)",
-      "Bash(ls:*)"
+      // Core Claude Code tools
+      "Edit", "Write", "Read", "Glob", "Grep", "LS",
+      
+      // Safe file operations
+      "Bash(ls:*)", "Bash(find:*)", "Bash(grep:*)", "Bash(cat:*)", 
+      "Bash(head:*)", "Bash(tail:*)", "Bash(wc:*)", "Bash(mkdir:*)",
+      "Bash(touch:*)", "Bash(pwd)", "Bash(which:*)", "Bash(file:*)",
+      
+      // Git operations (full workflow)
+      "Bash(git status)", "Bash(git log:*)", "Bash(git diff:*)",
+      "Bash(git show:*)", "Bash(git branch:*)", "Bash(git checkout:*)",
+      "Bash(git add:*)", "Bash(git commit:*)", "Bash(git push:*)",
+      "Bash(git pull)", "Bash(git fetch:*)", "Bash(git merge:*)",
+      "Bash(git stash:*)", "Bash(git remote:*)", "Bash(git tag:*)",
+      
+      // GitHub CLI operations
+      "Bash(gh auth status)", "Bash(gh issue list)", "Bash(gh issue view:*)",
+      "Bash(gh issue create:*)", "Bash(gh issue edit:*)", "Bash(gh issue comment:*)",
+      "Bash(gh project list:*)", "Bash(gh project view:*)", "Bash(gh project item-list:*)",
+      "Bash(gh project item-add:*)", "Bash(gh label list)", "Bash(gh label create:*)",
+      "Bash(gh api:*)",
+      
+      // Package management (Node.js focused for this project)
+      "Bash(npm install)", "Bash(npm run:*)", "Bash(npm test)", "Bash(npm start)",
+      "Bash(npm run build)", "Bash(npm run dev)", "Bash(npm run lint)",
+      "Bash(yarn install)", "Bash(yarn run:*)",
+      
+      // Development analysis
+      "Bash(du:*)", "Bash(ps aux)", "Bash(whoami)", "Bash(id)", "Bash(date)",
+      "Bash(echo:*)", "Bash(sort:*)", "Bash(uniq:*)", "Bash(cut:*)"
     ],
-    "deny": []
-  }
+    "deny": [
+      // Network operations
+      "Bash(curl:*)", "Bash(wget:*)", "Bash(ssh:*)", "Bash(scp:*)",
+      
+      // System administration  
+      "Bash(sudo:*)", "Bash(su:*)", "Bash(chmod:*)", "Bash(chown:*)",
+      
+      // Destructive operations
+      "Bash(rm:*)", "Bash(rmdir:*)", "Bash(dd:*)", "Bash(shred:*)",
+      
+      // Code execution
+      "Bash(eval:*)", "Bash(exec:*)", "Bash(sh:*)", "Bash(bash:*)",
+      "Bash(python:*)", "Bash(node:*)", "Bash(ruby:*)",
+      
+      // Process control
+      "Bash(kill:*)", "Bash(killall:*)", "Bash(pkill:*)"
+    ]
+  },
+  "env": {
+    "DISABLE_TELEMETRY": "1"
+  },
+  "includeCoAuthoredBy": false
 }
